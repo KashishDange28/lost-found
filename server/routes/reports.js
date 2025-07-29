@@ -18,11 +18,6 @@ router.post('/', auth, async (req, res) => {
 
     await report.save();
 
-    // If this is a found report, try to match it
-    if (type === 'found') {
-      await Report.matchReports(report._id);
-    }
-
     res.status(201).json({
       success: true,
       report
@@ -40,8 +35,7 @@ router.get('/', auth, async (req, res) => {
   try {
     const reports = await Report.find({ user: req.user.id })
       .sort({ createdAt: -1 })
-      .populate('user', 'name email')
-      .populate('matchedWith', 'item status');
+      .populate('user', 'name email');
     
     res.json({
       success: true,
@@ -59,8 +53,7 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const report = await Report.findById(req.params.id)
-      .populate('user', 'name email')
-      .populate('matchedWith', 'item status');
+      .populate('user', 'name email');
     
     if (!report) {
       return res.status(404).json({

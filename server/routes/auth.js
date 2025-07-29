@@ -2,18 +2,39 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { OAuth2Client } = require('google-auth-library');
+
+// Initialize Google OAuth2 client
+const googleClient = new OAuth2Client({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET
+});
+
+// Configure Google OAuth to accept all email domains
+const ALLOW_ALL_EMAILS = true;
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
+
+    // Validate input
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide name, email, and password'
+      });
+    }
+
+    // Validate email format
+    // (No restriction on email domain)
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists'
+        message: 'User already exists with this email'
       });
     }
 
@@ -28,34 +49,40 @@ router.post('/register', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    // Remove password from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
     res.status(201).json({
       success: true,
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }
+      user: userResponse
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
+    console.error('Registration error:', error);
+    next(error); // Pass to error handler middleware
   }
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide email and password'
+      });
+    }
+
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid email or password'
       });
     }
 
@@ -64,7 +91,7 @@ router.post('/login', async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid email or password'
       });
     }
 
@@ -75,19 +102,103 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    // Remove password from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
     res.json({
       success: true,
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }
+      user: userResponse
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
+    console.error('Login error:', error);
+    next(error); // Pass to error handler middleware
+  }
+});
+
+// Google OAuth setup - Using Google OAuth2Client directly
+// All Google OAuth is now handled by the /google-login endpoint
+
+// Google login endpoint for frontend
+router.post('/google-login', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    
+    if (!credential) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No credential provided' 
+      });
+    }
+
+    // Verify the Google ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    
+    const payload = ticket.getPayload();
+    
+    if (!payload.email_verified) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Google email not verified' 
+      });
+    }
+    
+    // Log the user's email for debugging
+    console.log('Google login attempt from email:', payload.email);
+    
+    // Allow all email domains
+    if (!ALLOW_ALL_EMAILS) {
+      const allowedDomains = ['kkwagh.edu.in'];
+      const emailDomain = payload.email.split('@')[1];
+      
+      if (!allowedDomains.includes(emailDomain)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Only specific email domains are allowed'
+        });
+      }
+    }
+
+    // Find or create user
+    let user = await User.findOne({ email: payload.email });
+    
+    if (!user) {
+      user = new User({
+        name: payload.name || 'User',
+        email: payload.email,
+        // Generate a random password for the user
+        password: require('crypto').randomBytes(16).toString('hex')
+      });
+      await user.save();
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Prepare user data for response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    
+    res.json({ 
+      success: true, 
+      token, 
+      user: userResponse 
+    });
+    
+  } catch (err) {
+    console.error('Google login error:', err);
+    res.status(401).json({ 
+      success: false, 
+      message: 'Google authentication failed',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 });

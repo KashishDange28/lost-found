@@ -9,19 +9,12 @@ const User = require('./models/User');
 
 const app = express();
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Global error handler:', err.stack);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal server error'
-  });
-});
-
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://192.168.56.1:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(morgan('dev'));
@@ -30,20 +23,7 @@ app.use(morgan('dev'));
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
-    // Create initial admin user if not exists
-    User.findOne({ email: 'admin@kkwagh.edu.in' })
-      .then(user => {
-        if (!user) {
-          const admin = new User({
-            name: 'Admin',
-            email: 'admin@kkwagh.edu.in',
-            password: 'admin123'
-          });
-          return admin.save();
-        }
-        return user;
-      })
-      .catch(err => console.error('Error creating admin user:', err));
+    // Database connection successful
   })
   .catch(err => {
     console.error('MongoDB connection error:', err);
@@ -53,6 +33,24 @@ mongoose.connect(process.env.MONGODB_URI)
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
+
+// Error handling middleware (must be after routes)
+app.use((err, req, res, next) => {
+  console.error('Global error handler:', err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'API endpoint not found'
+  });
+});
 
 const PORT = process.env.PORT || 5000;
 

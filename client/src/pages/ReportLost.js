@@ -65,21 +65,36 @@ const ReportLost = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">
-              Report Lost Item
-            </h1>
-            <p className="text-gray-600">
-              Please fill in the details about your lost item
-            </p>
+    <div
+      className="min-h-screen w-full flex flex-col items-center justify-center relative bg-gradient-to-br from-red-100 to-yellow-100 py-12"
+    >
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-white/60 z-0" />
+      <div className="relative z-10 w-full flex flex-col items-center justify-center py-10">
+        <div className="w-full max-w-xl mx-auto rounded-3xl shadow-2xl bg-white/80 backdrop-blur-2xl p-10 border border-white/40 card-3d">
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center mb-6">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500 text-white font-bold">1</div>
+              <span className="font-semibold text-red-700">Fill Details</span>
+              <span className="mx-2 text-gray-400">→</span>
+              <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 text-gray-500 font-bold">2</div>
+              <span className="font-semibold text-gray-500">Submit</span>
+            </div>
           </div>
-
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="flex flex-col items-center mb-8">
+            <div className="rounded-full bg-red-100 p-4 mb-4 float shimmer shadow-lg">
+              <svg className="w-14 h-14 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728l1.5-1.5m-1.5-1.5l-1.5-1.5" />
+              </svg>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 mb-2 font-serif tracking-tight drop-shadow-lg">Report Lost Item</h1>
+            <p className="text-gray-700 text-center mb-2">Please fill in the details about your lost item.</p>
+            <p className="text-red-700 text-center font-semibold mb-4">Don't worry, your item might be closer than you think! 🔍</p>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
             {success && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 animate-fade-in">
                 <div className="flex items-center">
                   <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -88,30 +103,26 @@ const ReportLost = () => {
                 </div>
               </div>
             )}
-
             {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 animate-fade-in">
                 <div className="flex items-center">
                   <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M5.07 19.07A9 9 0 1112 21a9 9 0 01-6.93-1.93z" />
                   </svg>
                   {error}
                 </div>
               </div>
             )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Item Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
                 <div className="relative">
                   <input
                     type="text"
                     name="itemName"
                     value={formData.itemName}
                     onChange={handleChange}
-                    className="appearance-none rounded-xl relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-xl block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm shadow-sm"
                     placeholder="Enter item name"
                     required
                   />
@@ -122,17 +133,34 @@ const ReportLost = () => {
                   </div>
                 </div>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="appearance-none rounded-xl block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm shadow-sm"
+                    placeholder="Where did you lose it?"
+                    required
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <div className="relative">
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    className="appearance-none rounded-xl relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-xl block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm shadow-sm"
                     rows="3"
                     placeholder="Describe your lost item in detail"
                     required
@@ -145,41 +173,15 @@ const ReportLost = () => {
                   </div>
                 </div>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    className="appearance-none rounded-xl relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Where did you lose it?"
-                    required
-                  />
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date Lost
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date Lost</label>
                 <div className="relative">
                   <input
                     type="date"
                     name="dateLost"
                     value={formData.dateLost}
                     onChange={handleChange}
-                    className="appearance-none rounded-xl relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-xl block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm shadow-sm"
                   />
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,18 +190,15 @@ const ReportLost = () => {
                   </div>
                 </div>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Information
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Information</label>
                 <div className="relative">
                   <input
                     type="text"
                     name="contactInfo"
                     value={formData.contactInfo}
                     onChange={handleChange}
-                    className="appearance-none rounded-xl relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none rounded-xl block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm shadow-sm"
                     placeholder="Phone number or email"
                   />
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -209,25 +208,24 @@ const ReportLost = () => {
                   </div>
                 </div>
               </div>
-
-              <div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                  {loading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2"></div>
-                      Submitting...
-                    </div>
-                  ) : (
-                    'Report Lost Item'
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+            </div>
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-hover w-full py-3 px-4 bg-red-500 text-white rounded-xl font-bold text-lg hover:bg-red-600 transition-colors duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:opacity-50 flex justify-center items-center"
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2"></div>
+                    Submitting...
+                  </div>
+                ) : (
+                  'Report Lost Item'
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

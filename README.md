@@ -7,7 +7,6 @@ A full-stack web application for managing lost and found items for kkwagh colleg
 - User authentication and authorization
 - Item posting and management
 - Search functionality for lost items
-- Real-time notifications
 - Responsive web interface
 
 ## Tech Stack
@@ -16,8 +15,7 @@ A full-stack web application for managing lost and found items for kkwagh colleg
 - **Backend**: Node.js with Express
 - **Database**: MongoDB
 - **Authentication**: JWT
-- **Real-time Updates**: Socket.io
-
+- 
 ## Getting Started
 
 ### Prerequisites

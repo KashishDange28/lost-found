@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -20,16 +21,32 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.email.endsWith('@kkwagh.edu.in')) {
-      setError('Please use your college email (@kkwagh.edu.in)');
+    if (!formData.name || !formData.email || !formData.password) {
+      setError('Please fill in all fields');
       return;
     }
     try {
       const response = await axios.post('http://localhost:5000/api/auth/register', formData);
       localStorage.setItem('token', response.data.token);
-      navigate('/');
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      navigate('/home');
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/google-login', {
+        credential: credentialResponse.credential
+      });
+      if (response.data.success) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('token', response.data.token);
+        navigate('/home');
+      }
+    } catch (err) {
+      setError('Google sign up failed.');
     }
   };
 
@@ -40,6 +57,14 @@ const Register = () => {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create your account
           </h2>
+        </div>
+        {/* Google Sign Up Button */}
+        <div className="flex flex-col items-center mb-4">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google sign up failed.')}
+            useOneTap
+          />
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
@@ -69,7 +94,7 @@ const Register = () => {
                 type="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address (@kkwagh.edu.in)"
+                placeholder="Email address"
                 onChange={handleChange}
                 value={formData.email}
               />
