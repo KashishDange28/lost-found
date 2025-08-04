@@ -28,8 +28,8 @@ const reportSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'resolved', 'matched', 'approved', 'rejected'],
-    default: 'pending'
+    enum: ['pending', 'active', 'resolved', 'matched', 'approved', 'rejected'],
+    default: 'active'
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -40,8 +40,6 @@ const reportSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
-
 
 const Report = mongoose.model('Report', reportSchema);
 module.exports = Report;

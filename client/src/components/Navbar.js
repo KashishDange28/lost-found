@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink as RouterLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationBell from './NotificationBell';
 
 // Custom NavLink component for desktop navigation
 const NavLink = ({ children, to, ...props }) => {
@@ -110,13 +111,27 @@ const Navbar = () => {
                 <NavLink to="/report-lost">Report Lost</NavLink>
                 <NavLink to="/report-found">Report Found</NavLink>
                 <NavLink to="/my-reports">My Reports</NavLink>
-                {user?.isAdmin && <NavLink to="/dashboard">Dashboard</NavLink>}
+                <NavLink to="/matched-reports">Matched Reports</NavLink>
+                {user?.isAdmin && <NavLink to="/admin-dashboard">Admin Dashboard</NavLink>}
               </div>
             </div>
           )}
 
           {/* Right side - Desktop */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Admin Login Link */}
+            {!user && (
+              <Link
+                to="/admin-login"
+                className="text-purple-600 hover:text-purple-700 font-medium text-sm"
+              >
+                Admin Login
+              </Link>
+            )}
+            
+            {/* Notification Bell */}
+            {user && <NotificationBell />}
+            
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -179,7 +194,10 @@ const Navbar = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Mobile Notification Bell */}
+            {user && <NotificationBell />}
+            
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
@@ -208,6 +226,9 @@ const Navbar = () => {
             <MobileNavLink to="/report-lost">Report Lost</MobileNavLink>
             <MobileNavLink to="/report-found">Report Found</MobileNavLink>
             <MobileNavLink to="/my-reports">My Reports</MobileNavLink>
+            <MobileNavLink to="/matched-reports">Matched Reports</MobileNavLink>
+            <MobileNavLink to="/test-matching">Test Matching</MobileNavLink>
+            <MobileNavLink to="/debug-auth">Debug Auth</MobileNavLink>
             {user?.isAdmin && <MobileNavLink to="/dashboard">Dashboard</MobileNavLink>}
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200">

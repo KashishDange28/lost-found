@@ -104,8 +104,8 @@ const Login = () => {
               console.error('Google OAuth error');
               setError('Failed to sign in with Google. Please try again.');
             }}
-            useOneTap
-            auto_select
+            useOneTap={false}
+            auto_select={false}
             ux_mode="popup"
             prompt="select_account"
             scope="profile email"

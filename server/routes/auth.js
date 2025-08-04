@@ -132,6 +132,8 @@ router.post('/google-login', async (req, res) => {
       });
     }
 
+    console.log('Google login attempt with credential length:', credential.length);
+
     // Verify the Google ID token
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
@@ -139,6 +141,12 @@ router.post('/google-login', async (req, res) => {
     });
     
     const payload = ticket.getPayload();
+    
+    console.log('Google payload received:', {
+      email: payload.email,
+      name: payload.name,
+      email_verified: payload.email_verified
+    });
     
     if (!payload.email_verified) {
       return res.status(401).json({ 
@@ -167,6 +175,7 @@ router.post('/google-login', async (req, res) => {
     let user = await User.findOne({ email: payload.email });
     
     if (!user) {
+      console.log('Creating new user for email:', payload.email);
       user = new User({
         name: payload.name || 'User',
         email: payload.email,
@@ -174,6 +183,9 @@ router.post('/google-login', async (req, res) => {
         password: require('crypto').randomBytes(16).toString('hex')
       });
       await user.save();
+      console.log('New user created with ID:', user._id);
+    } else {
+      console.log('Existing user found with ID:', user._id);
     }
 
     // Generate JWT token
@@ -187,6 +199,13 @@ router.post('/google-login', async (req, res) => {
     const userResponse = user.toObject();
     delete userResponse.password;
     
+    console.log('Sending user response:', {
+      success: true,
+      userId: userResponse._id,
+      name: userResponse.name,
+      email: userResponse.email
+    });
+    
     res.json({ 
       success: true, 
       token, 
@@ -198,6 +217,69 @@ router.post('/google-login', async (req, res) => {
     res.status(401).json({ 
       success: false, 
       message: 'Google authentication failed',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+});
+
+// Admin login endpoint
+router.post('/admin-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please provide email and password' 
+      });
+    }
+
+    console.log('Admin login attempt:', email);
+
+    // Find admin user
+    const admin = await User.findOne({ email, isAdmin: true });
+    
+    if (!admin) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid admin credentials' 
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await admin.comparePassword(password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid admin credentials' 
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: admin._id, isAdmin: true },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Prepare admin data for response
+    const adminResponse = admin.toObject();
+    delete adminResponse.password;
+    
+    console.log('Admin login successful:', admin.email);
+    
+    res.json({ 
+      success: true, 
+      token, 
+      user: adminResponse 
+    });
+    
+  } catch (err) {
+    console.error('Admin login error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Admin authentication failed',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }

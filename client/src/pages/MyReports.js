@@ -1,130 +1,354 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { 
+  DocumentTextIcon, 
+  UserIcon, 
+  MapPinIcon, 
+  CalendarIcon,
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  EyeIcon,
+  PencilIcon,
+  TrashIcon
+} from '@heroicons/react/24/outline';
 
 const MyReports = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('lost');
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(
-          'http://localhost:5000/api/reports',
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
-        setReports(response.data.reports);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch reports');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchReports();
   }, []);
 
-  const lostReports = reports.filter(report => report.type === 'lost');
-  const foundReports = reports.filter(report => report.type === 'found');
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await axios.get('http://localhost:5000/api/reports', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.data.success) {
+        setReports(response.data.reports);
+      } else {
+        setError('Failed to fetch reports');
+      }
+    } catch (err) {
+      console.error('Error fetching reports:', err);
+      setError('Failed to fetch reports. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'resolved':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'closed':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getTypeColor = (type) => {
+    return type === 'lost' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-green-100 text-green-800 border-green-200';
+  };
+
+  const getTypeIcon = (type) => {
+    return type === 'lost' ? ExclamationTriangleIcon : CheckCircleIcon;
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'active':
+        return ClockIcon;
+      case 'resolved':
+        return CheckCircleIcon;
+      case 'closed':
+        return EyeIcon;
+      default:
+        return ClockIcon;
+    }
+  };
+
+  // Helper function to get item name safely
+  const getItemName = (item) => {
+    if (typeof item === 'string') {
+      return item;
+    }
+    if (item && typeof item === 'object' && item.name) {
+      return item.name;
+    }
+    return 'Unknown Item';
+  };
+
+  // Helper function to get item description safely
+  const getItemDescription = (item) => {
+    if (typeof item === 'string') {
+      return null;
+    }
+    if (item && typeof item === 'object' && item.description) {
+      return item.description;
+    }
+    return null;
+  };
+
+  const filteredReports = reports.filter(report => {
+    if (filter === 'all') return true;
+    if (filter === 'lost') return report.type === 'lost';
+    if (filter === 'found') return report.type === 'found';
+    return true;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
+            <p className="mt-6 text-xl text-gray-700 font-medium">Loading your reports...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-lg">
+            <div className="flex items-center">
+              <ExclamationTriangleIcon className="h-8 w-8 text-red-500 mr-3" />
+              <div>
+                <h3 className="text-lg font-semibold text-red-800">Error Loading Reports</h3>
+                <p className="text-red-700 mt-1">{error}</p>
+              </div>
+            </div>
+            <button 
+              onClick={fetchReports}
+              className="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="min-h-screen w-full flex flex-col items-center justify-center relative bg-gradient-to-br from-blue-100 to-purple-100 py-12"
-    >
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-white/60 z-0" />
-      <div className="relative z-10 w-full flex flex-col items-center justify-center py-10">
-        <div className="max-w-3xl w-full mx-auto rounded-3xl shadow-2xl bg-white/80 backdrop-blur-2xl p-10 border border-white/40 card-3d">
-          {/* Summary Stats */}
-          <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-center bg-red-100 rounded-xl px-4 py-2 shadow">
-                <span className="text-2xl font-bold text-red-600">{lostReports.length}</span>
-                <span className="text-xs text-red-700">Lost</span>
-              </div>
-              <div className="flex flex-col items-center bg-green-100 rounded-xl px-4 py-2 shadow">
-                <span className="text-2xl font-bold text-green-600">{foundReports.length}</span>
-                <span className="text-xs text-green-700">Found</span>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-6">
+            <DocumentTextIcon className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">My Reports</h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Manage and track all your lost and found item reports in one place.
+          </p>
+        </div>
+
+        {/* Stats and Filters */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gray-900">{reports.length}</div>
+              <div className="text-sm text-gray-600">Total Reports</div>
             </div>
-            <div className="flex gap-2 mt-2 md:mt-0">
-              <button
-                className={`px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${activeTab === 'lost' ? 'bg-red-500 text-white' : 'bg-red-100 text-red-700'}`}
-                onClick={() => setActiveTab('lost')}
-              >
-                Lost Items
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${activeTab === 'found' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700'}`}
-                onClick={() => setActiveTab('found')}
-              >
-                Found Items
-              </button>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-red-600">{reports.filter(r => r.type === 'lost').length}</div>
+              <div className="text-sm text-gray-600">Lost Items</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600">{reports.filter(r => r.type === 'found').length}</div>
+              <div className="text-sm text-gray-600">Found Items</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600">{reports.filter(r => r.status === 'active').length}</div>
+              <div className="text-sm text-gray-600">Active</div>
             </div>
           </div>
-          {/* Tab Content */}
-          {loading ? (
-            <div className="flex justify-center items-center min-h-[200px]">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+
+          {/* Filter Tabs */}
+          <div className="flex flex-wrap gap-2 justify-center">
+            {[
+              { key: 'all', label: 'All Reports', count: reports.length },
+              { key: 'lost', label: 'Lost Items', count: reports.filter(r => r.type === 'lost').length },
+              { key: 'found', label: 'Found Items', count: reports.filter(r => r.type === 'found').length }
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setFilter(tab.key)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filter === tab.key
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {tab.label} ({tab.count})
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {filteredReports.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="bg-white rounded-2xl shadow-xl p-12 max-w-md mx-auto">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <DocumentTextIcon className="h-12 w-12 text-gray-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">No Reports Found</h3>
+              <p className="text-gray-600 mb-6">
+                {filter === 'all' 
+                  ? "You haven't created any reports yet. Start by reporting a lost or found item!"
+                  : `You haven't created any ${filter} reports yet.`
+                }
+              </p>
+              <div className="space-y-3">
+                <button 
+                  onClick={() => window.location.href = '/report-lost'}
+                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Report Lost Item
+                </button>
+                <button 
+                  onClick={() => window.location.href = '/report-found'}
+                  className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  Report Found Item
+                </button>
+              </div>
             </div>
-          ) : error ? (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 animate-fade-in">{error}</div>
-          ) : (
-            <div>
-              {activeTab === 'lost' ? (
-                lostReports.length === 0 ? (
-                  <p className="text-gray-500 text-center">No lost items reported yet</p>
-                ) : (
-                  <div className="space-y-4">
-                    {lostReports.map((report) => (
-                      <div key={report._id} className="bg-white/90 p-6 rounded-xl shadow card-3d border border-white/40 flex flex-col md:flex-row gap-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold mb-1 text-gray-800 flex items-center gap-2">
-                            <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728l1.5-1.5m-1.5-1.5l-1.5-1.5" />
-                            </svg>
-                            {report.item.name}
-                          </h3>
-                          <p className="text-gray-600 mb-1">{report.item.description}</p>
-                          <p className="text-gray-600 mb-1">Last seen at: {report.location}</p>
-                          <p className="text-sm text-gray-500 mb-1">Reported on: {new Date(report.createdAt).toLocaleDateString()}</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {filteredReports.map((report) => {
+              const itemName = getItemName(report.item);
+              const itemDescription = getItemDescription(report.item);
+              const TypeIcon = getTypeIcon(report.type);
+              const StatusIcon = getStatusIcon(report.status);
+              
+              return (
+                <div key={report._id} className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                  {/* Report Header */}
+                  <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                          <TypeIcon className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">{itemName}</h3>
+                          <div className="flex items-center space-x-3 mt-1">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getTypeColor(report.type)}`}>
+                              {report.type.toUpperCase()}
+                            </span>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(report.status)}`}>
+                              {report.status}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )
-              ) : (
-                foundReports.length === 0 ? (
-                  <p className="text-gray-500 text-center">No found items reported yet</p>
-                ) : (
-                  <div className="space-y-4">
-                    {foundReports.map((report) => (
-                      <div key={report._id} className="bg-white/90 p-6 rounded-xl shadow card-3d border border-white/40 flex flex-col md:flex-row gap-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold mb-1 text-gray-800 flex items-center gap-2">
-                            <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            {report.item.name}
-                          </h3>
-                          <p className="text-gray-600 mb-1">{report.item.description}</p>
-                          <p className="text-gray-600 mb-1">Found at: {report.location}</p>
-                          <p className="text-gray-600 mb-1">Contact: {report.contactInfo}</p>
-                          <p className="text-sm text-gray-500 mb-1">Reported on: {new Date(report.createdAt).toLocaleDateString()}</p>
+                      <div className="text-right text-white">
+                        <div className="text-sm opacity-90">
+                          {new Date(report.createdAt).toLocaleDateString()}
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                )
-              )}
-            </div>
-          )}
+
+                  {/* Report Content */}
+                  <div className="p-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Item Details */}
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-semibold text-gray-900">Item Details</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <MapPinIcon className="h-5 w-5 text-gray-400" />
+                            <span className="text-gray-700">{report.location}</span>
+                          </div>
+                          {itemDescription && (
+                            <div className="bg-gray-50 rounded-lg p-3">
+                              <p className="text-sm text-gray-600">{itemDescription}</p>
+                            </div>
+                          )}
+                          {report.description && (
+                            <div className="bg-blue-50 rounded-lg p-3">
+                              <p className="text-sm text-blue-800">{report.description}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Contact & Status */}
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-semibold text-gray-900">Contact & Status</h4>
+                        <div className="space-y-3">
+                          {report.contactInfo && (
+                            <div className="flex items-center space-x-3">
+                              <UserIcon className="h-5 w-5 text-gray-400" />
+                              <span className="text-gray-700">{report.contactInfo}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center space-x-3">
+                            <CalendarIcon className="h-5 w-5 text-gray-400" />
+                            <span className="text-gray-700">
+                              Created: {new Date(report.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <StatusIcon className="h-5 w-5 text-gray-400" />
+                            <span className="text-gray-700">Status: {report.status}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center space-x-2">
+                        <EyeIcon className="h-4 w-4" />
+                        <span>View Details</span>
+                      </button>
+                      <button className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium flex items-center space-x-2">
+                        <PencilIcon className="h-4 w-4" />
+                        <span>Edit</span>
+                      </button>
+                      <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center space-x-2">
+                        <TrashIcon className="h-4 w-4" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Refresh Button */}
+        <div className="text-center mt-12">
+          <button
+            onClick={fetchReports}
+            className="bg-gray-800 text-white px-8 py-3 rounded-lg hover:bg-gray-900 transition-colors font-medium flex items-center space-x-2 mx-auto"
+          >
+            <DocumentTextIcon className="h-5 w-5" />
+            <span>Refresh Reports</span>
+          </button>
         </div>
       </div>
     </div>
