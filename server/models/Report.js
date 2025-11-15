@@ -14,6 +14,10 @@ const reportSchema = new mongoose.Schema({
     description: {
       type: String,
       required: true
+    },
+    imageUrl: { // <-- ADDED THIS LINE
+      type: String,
+      required: false 
     }
   },
   location: {

@@ -54,11 +54,19 @@ const Register = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
+          <Link to="/" className="flex justify-center mb-6">
+                      <img
+                        src={process.env.PUBLIC_URL + '/kkwlogo.png'}
+                        alt="KKW Logo"
+                        className="h-16 w-16"
+                      />
+                    </Link>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create your account
           </h2>
         </div>
-        {/* Google Sign Up Button */}
+        
+        {/* Google Sign Up Button - CORRECTED BLOCK */}
         <div className="flex flex-col items-center mb-4">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
@@ -66,6 +74,7 @@ const Register = () => {
             useOneTap
           />
         </div>
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">

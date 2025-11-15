@@ -40,12 +40,36 @@ const NotificationBell = () => {
       markNotificationAsRead(notification.notificationId || notification._id);
     }
     
-    // Show contact details for match notifications
-    if (notification.type === 'match' && notification.matchedUserInfo) {
-      setSelectedNotification(notification);
+    // --- THIS IS THE UPDATED LOGIC ---
+    // 'matchedUserInfo' comes from real-time socket message
+    // 'matchedReport' comes from fetching old notifications from DB
+    
+    const matchedInfo = notification.matchedUserInfo; // Real-time info
+    const matchedReport = notification.matchedReport; // DB info
+
+    if (notification.type === 'match') {
+      if (matchedInfo) {
+        // Case 1: Real-time notification
+        setSelectedNotification({
+          name: matchedInfo.name,
+          email: matchedInfo.email,
+          contactInfo: matchedInfo.contactInfo
+        });
+      } else if (matchedReport && matchedReport.user) {
+        // Case 2: Clicked on old notification from DB
+        setSelectedNotification({
+          name: matchedReport.user.name,
+          email: matchedReport.user.email,
+          contactInfo: matchedReport.contactInfo // This is the 'found' item's contact info
+        });
+      } else {
+        // Fallback in case something is wrong
+        setShowDropdown(false);
+      }
     } else {
       setShowDropdown(false);
     }
+    // --- END OF UPDATED LOGIC ---
   };
 
   const closeContactModal = () => {
@@ -111,7 +135,7 @@ const NotificationBell = () => {
         </div>
       )}
 
-      {/* Contact Details Modal */}
+      {/* --- UPDATED Contact Details Modal --- */}
       {selectedNotification && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
@@ -132,18 +156,18 @@ const NotificationBell = () => {
             <div className="space-y-3">
               <div>
                 <p className="text-sm font-medium text-gray-700">Name:</p>
-                <p className="text-lg text-gray-900">{selectedNotification.matchedUserInfo.name}</p>
+                <p className="text-lg text-gray-900">{selectedNotification.name}</p>
               </div>
               
               <div>
                 <p className="text-sm font-medium text-gray-700">Email:</p>
-                <p className="text-lg text-gray-900">{selectedNotification.matchedUserInfo.email}</p>
+                <p className="text-lg text-gray-900">{selectedNotification.email}</p>
               </div>
               
-              {selectedNotification.matchedUserInfo.contactInfo && (
+              {selectedNotification.contactInfo && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Contact Info:</p>
-                  <p className="text-lg text-gray-900">{selectedNotification.matchedUserInfo.contactInfo}</p>
+                  <p className="text-sm font-medium text-gray-700">Contact Info (from 'found' report):</p>
+                  <p className="text-lg text-gray-900">{selectedNotification.contactInfo}</p>
                 </div>
               )}
             </div>
@@ -157,7 +181,7 @@ const NotificationBell = () => {
               </button>
               <button
                 onClick={() => {
-                  window.open(`mailto:${selectedNotification.matchedUserInfo.email}`, '_blank');
+                  window.open(`mailto:${selectedNotification.email}`, '_blank');
                   closeContactModal();
                 }}
                 className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -172,4 +196,4 @@ const NotificationBell = () => {
   );
 };
 
-export default NotificationBell; 
+export default NotificationBell;

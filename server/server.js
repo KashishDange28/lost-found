@@ -8,6 +8,7 @@ const socketIo = require('socket.io');
 const authRoutes = require('./routes/auth');
 const reportRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
+const usersRoutes = require('./routes/users');
 const User = require('./models/User');
 const Report = require('./models/Report');
 const Notification = require('./models/Notification');
@@ -17,7 +18,7 @@ const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
     origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://192.168.56.1:3000'],
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
   }
 });
 
@@ -52,14 +53,17 @@ const sendNotification = (userId, notification) => {
   }
 };
 
-// Function to find matches and send notifications
+
+// --- THIS IS THE FIXED MATCHING FUNCTION ---
 const findMatchesAndNotify = async (newReport) => {
   try {
     console.log('Finding matches for new report:', newReport._id);
     
+    // Populate the user of the new report to get their name/email
+    await newReport.populate('user', 'name email');
+    
     let matchingReports;
     
-    // Get the item name and description from the new report
     let newItemName = '';
     let newItemDescription = '';
     
@@ -73,83 +77,45 @@ const findMatchesAndNotify = async (newReport) => {
     console.log('New report item name:', newItemName);
     console.log('New report item description:', newItemDescription);
     
-    // Create keywords for better matching
-    const newKeywords = [
-      newItemName.toLowerCase(),
-      newItemDescription.toLowerCase(),
-      ...newItemName.toLowerCase().split(' '),
-      ...newItemDescription.toLowerCase().split(' ')
-    ].filter(keyword => keyword.length > 2); // Filter out short words
+    // --- UPDATED KEYWORD LOGIC ---
+    // Combine name and description, split into words, get unique words, and filter out empty strings.
+    const combinedText = (newItemName.toLowerCase() + ' ' + newItemDescription.toLowerCase());
+    const keywords = combinedText.split(/\s+/); // Split by one or more spaces
+    const uniqueKeywords = [...new Set(keywords)].filter(k => k.length > 0); // Allow short words!
+    // -----------------------------
     
-    console.log('Search keywords:', newKeywords);
+    console.log('Search keywords:', uniqueKeywords);
     
-    if (newReport.type === 'found') {
-      // Find lost reports that match this found item
-      const searchCriteria = {
-        type: 'lost',
-        status: 'active',
-        _id: { $ne: newReport._id }
-      };
-      
-      // Create an OR condition for matching
-      const orConditions = [];
-      
-      // Add exact name matches
-      if (newItemName) {
-        orConditions.push({ 'item.name': { $regex: new RegExp(newItemName, 'i') } });
-        orConditions.push({ item: { $regex: new RegExp(newItemName, 'i') } });
-      }
-      
-      // Add keyword matches
-      newKeywords.forEach(keyword => {
-        if (keyword.length > 2) {
-          orConditions.push({ 'item.name': { $regex: new RegExp(keyword, 'i') } });
-          orConditions.push({ 'item.description': { $regex: new RegExp(keyword, 'i') } });
-          orConditions.push({ item: { $regex: new RegExp(keyword, 'i') } });
-        }
-      });
-      
-      if (orConditions.length > 0) {
-        searchCriteria.$or = orConditions;
-      }
-      
-      console.log('Search criteria for lost reports:', JSON.stringify(searchCriteria, null, 2));
-      
-      matchingReports = await Report.find(searchCriteria).populate('user', 'name email');
-    } else if (newReport.type === 'lost') {
-      // Find found reports that match this lost item
-      const searchCriteria = {
-        type: 'found',
-        status: 'active',
-        _id: { $ne: newReport._id }
-      };
-      
-      // Create an OR condition for matching
-      const orConditions = [];
-      
-      // Add exact name matches
-      if (newItemName) {
-        orConditions.push({ 'item.name': { $regex: new RegExp(newItemName, 'i') } });
-        orConditions.push({ item: { $regex: new RegExp(newItemName, 'i') } });
-      }
-      
-      // Add keyword matches
-      newKeywords.forEach(keyword => {
-        if (keyword.length > 2) {
-          orConditions.push({ 'item.name': { $regex: new RegExp(keyword, 'i') } });
-          orConditions.push({ 'item.description': { $regex: new RegExp(keyword, 'i') } });
-          orConditions.push({ item: { $regex: new RegExp(keyword, 'i') } });
-        }
-      });
-      
-      if (orConditions.length > 0) {
-        searchCriteria.$or = orConditions;
-      }
-      
-      console.log('Search criteria for found reports:', JSON.stringify(searchCriteria, null, 2));
-      
-      matchingReports = await Report.find(searchCriteria).populate('user', 'name email');
+    let searchCriteria = {
+      type: newReport.type === 'lost' ? 'found' : 'lost', // Find the opposite type
+      status: 'active',
+      _id: { $ne: newReport._id }
+    };
+
+    // If we have no keywords, we can't match
+    if (uniqueKeywords.length === 0) {
+      console.log('No keywords to search with. Aborting match find.');
+      return;
     }
+
+    // Create an OR condition for matching
+    // This will find reports where ANY of the keywords match the name or description
+    const orConditions = [];
+    uniqueKeywords.forEach(keyword => {
+      // Create a regex for the keyword
+      const regex = new RegExp(keyword.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i'); // Escape special chars
+      orConditions.push({ 'item.name': { $regex: regex } });
+      orConditions.push({ 'item.description': { $regex: regex } });
+      orConditions.push({ item: { $regex: regex } }); // For old string-based items
+    });
+    
+    // Remove duplicate conditions
+    const uniqueOrConditions = [...new Map(orConditions.map(item => [JSON.stringify(item), item])).values()];
+    searchCriteria.$or = uniqueOrConditions;
+      
+    console.log(`Search criteria for ${searchCriteria.type} reports:`, JSON.stringify(searchCriteria, null, 2));
+    
+    matchingReports = await Report.find(searchCriteria).populate('user', 'name email');
 
     console.log('Found matching reports:', matchingReports ? matchingReports.length : 0);
 
@@ -157,31 +123,38 @@ const findMatchesAndNotify = async (newReport) => {
       for (const matchReport of matchingReports) {
         console.log('Processing match with report:', matchReport._id);
         
-        // Get match item details
         let matchItemName = '';
         if (typeof matchReport.item === 'string') {
           matchItemName = matchReport.item;
         } else if (matchReport.item && typeof matchReport.item === 'object') {
           matchItemName = matchReport.item.name || '';
         }
+
+        // --- Safety check for deleted users ---
+        if (!matchReport.user || !newReport.user) {
+          console.log(`Skipping match, user not found. newReport.user: ${!!newReport.user}, matchReport.user: ${!!matchReport.user}`);
+          continue; 
+        }
         
-        // Create notification for the user who posted the matching report
+        // --- THIS IS THE IMMEDIATE NOTIFICATION YOU WANTED ---
+        
+        // 1. Create notification for the user who posted the *matching* report
         const notification = new Notification({
           user: matchReport.user._id,
           type: 'match',
-          title: 'Item Match Found! 🎉',
-          message: `Your ${matchReport.type} report for "${matchItemName}" has a potential match! Click to view details and contact the other user.`,
+          title: 'Potential Match Found! 💡',
+          message: `Your ${matchReport.type} report for "${matchItemName}" has a new potential match!`,
           report: matchReport._id,
           matchedReport: newReport._id
         });
         await notification.save();
         console.log('Created notification for user:', matchReport.user._id);
 
-        // Send real-time notification
+        // 2. Send real-time notification to that user
         sendNotification(matchReport.user._id.toString(), {
           type: 'match',
-          title: 'Item Match Found! 🎉',
-          message: `Your ${matchReport.type} report for "${matchItemName}" has a potential match! Click to view details and contact the other user.`,
+          title: 'Potential Match Found! 💡',
+          message: `Your ${matchReport.type} report for "${matchItemName}" has a new potential match! An admin will review it.`,
           notificationId: notification._id,
           matchedReportId: newReport._id,
           matchedUserInfo: {
@@ -191,22 +164,23 @@ const findMatchesAndNotify = async (newReport) => {
           }
         });
 
-        // Also notify the user who posted the new report
+        // 3. Create notification for the user who posted the *new* report
         const newNotification = new Notification({
-          user: newReport.user,
+          user: newReport.user._id, // Use _id from populated user
           type: 'match',
-          title: 'Item Match Found! 🎉',
-          message: `Your ${newReport.type} report for "${newItemName}" has a potential match! Click to view details and contact the other user.`,
+          title: 'Potential Match Found! 💡',
+          message: `Your ${newReport.type} report for "${newItemName}" has a new potential match!`,
           report: newReport._id,
           matchedReport: matchReport._id
         });
         await newNotification.save();
-        console.log('Created notification for new report user:', newReport.user);
+        console.log('Created notification for new report user:', newReport.user._id);
 
-        sendNotification(newReport.user.toString(), {
+        // 4. Send real-time notification to the new report user
+        sendNotification(newReport.user._id.toString(), {
           type: 'match',
-          title: 'Item Match Found! 🎉',
-          message: `Your ${newReport.type} report for "${newItemName}" has a potential match! Click to view details and contact the other user.`,
+          title: 'Potential Match Found! 💡',
+          message: `Your ${newReport.type} report for "${newItemName}" has a new potential match! An admin will review it.`,
           notificationId: newNotification._id,
           matchedReportId: matchReport._id,
           matchedUserInfo: {
@@ -220,9 +194,11 @@ const findMatchesAndNotify = async (newReport) => {
       console.log('No matching reports found');
     }
   } catch (error) {
-    console.error('Error finding matches:', error);
+    console.error('Error in findMatchesAndNotify:', error);
   }
 };
+// --- END OF FIXED FUNCTION ---
+
 
 // Make the function available to routes
 app.locals.findMatchesAndNotify = findMatchesAndNotify;
@@ -245,34 +221,22 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
 .then(async () => {
   console.log('Connected to MongoDB');
-  
-  // Create admin user if it doesn't exist
-  try {
-    const existingAdmin = await User.findOne({ email: 'admin@gmail.com' });
-    if (!existingAdmin) {
-      const adminUser = new User({
-        name: 'Administrator',
-        email: 'admin@gmail.com',
-        password: 'admin123',
-        isAdmin: true
-      });
-      await adminUser.save();
-      console.log('✅ Admin user created: admin@gmail.com / admin123');
-    } else {
-      console.log('✅ Admin user already exists: admin@gmail.com');
-    }
-  } catch (error) {
-    console.log('Admin user creation error:', error.message);
-  }
+  // Admin check removed as requested
 })
 .catch(err => {
   console.error('MongoDB connection error:', err);
 });
 
-// Routes
+// --- CLEANED UP ROUTES ---
+// Serve static files from 'uploads' folder
+app.use('/uploads', express.static('uploads'));
+
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', usersRoutes); 
+// -------------------------
 
 // Error handling middleware (must be after routes)
 app.use((err, req, res, next) => {
@@ -315,12 +279,17 @@ const startServer = () => {
         break;
       case 'EADDRINUSE':
         console.error(bind + ' is already in use');
-        // Try alternative port
-        const altPort = PORT === 5000 ? 5001 : 5000;
+        const altPort = PORT + 1; // Try next port
         console.log(`Attempting to start server on port ${altPort}...`);
-        process.env.PORT = altPort;
-        server.close();
-        startServer();
+        
+        setTimeout(() => {
+          server.listen(altPort, () => {
+            console.log(`Server is running on port ${altPort}`);
+          }).on('error', (err) => {
+            console.error(`Failed to start on port ${altPort} as well.`, err);
+            process.exit(1);
+          });
+        }, 1000);
         break;
       default:
         throw error;

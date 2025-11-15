@@ -21,7 +21,31 @@ const userSchema = new mongoose.Schema({
   isAdmin: {
     type: Boolean,
     default: false
+  },
+  
+  // --- ADD ALL THESE NEW FIELDS ---
+  profileImageUrl: {
+    type: String,
+    required: false
+  },
+  phone: {
+    type: String,
+    required: false
+  },
+  branch: {
+    type: String,
+    required: false
+  },
+  year: {
+    type: String,
+    required: false
+  },
+  enrollmentNo: {
+    type: String,
+    required: false
   }
+  // ---------------------------------
+
 }, {
   timestamps: true
 });

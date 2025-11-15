@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { UserCircleIcon } from '@heroicons/react/24/solid';
 
 const Profile = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser } = useAuth(); // Now updateUser exists
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -14,6 +15,8 @@ const Profile = () => {
     year: '',
     enrollmentNo: ''
   });
+  const [profileImage, setProfileImage] = useState(null); // For the new file
+  const [imagePreview, setImagePreview] = useState(null); // For the preview
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -28,6 +31,10 @@ const Profile = () => {
         year: user.year || '',
         enrollmentNo: user.enrollmentNo || ''
       });
+      // Set initial image preview from user context
+      if (user.profileImageUrl) {
+        setImagePreview(`http://localhost:5000/${user.profileImageUrl.replace(/\\/g, '/')}`);
+      }
     }
   }, [user]);
 
@@ -39,26 +46,48 @@ const Profile = () => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileImage(file);
+      // Create a local URL for instant preview
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
+    // --- MUST USE FORMDATA FOR FILE UPLOADS ---
+    const data = new FormData();
+    data.append('name', formData.name);
+    data.append('phone', formData.phone);
+    data.append('branch', formData.branch);
+    data.append('year', formData.year);
+    data.append('enrollmentNo', formData.enrollmentNo);
+    
+    if (profileImage) {
+      data.append('profileImage', profileImage); // Must match 'upload.single('profileImage')'
+    }
+    // ------------------------------------------
+
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
         'http://localhost:5000/api/users/profile',
-        formData,
+        data, // <-- Send FormData
         {
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
+            // Don't set Content-Type, axios does it automatically
           }
         }
       );
       
-      updateUser(response.data.user);
+      updateUser(response.data.user); // Update context and localStorage
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -101,33 +130,40 @@ const Profile = () => {
           <form onSubmit={handleSubmit} className="px-4 py-5 sm:p-6">
             {error && (
               <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
-                </div>
+                {/* ... Error content ... */}
               </div>
             )}
             
             {success && (
               <div className="mb-4 bg-green-50 border-l-4 border-green-500 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-green-700">{success}</p>
-                  </div>
-                </div>
+                {/* ... Success content ... */}
               </div>
             )}
+
+            {/* --- NEW PROFILE IMAGE SECTION --- */}
+            <div className="sm:col-span-6 mb-6">
+              <label className="block text-sm font-medium text-gray-700">
+                Profile Photo
+              </label>
+              <div className="mt-2 flex items-center space-x-4">
+                <span className="h-24 w-24 rounded-full overflow-hidden bg-gray-100">
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Profile" className="h-full w-full object-cover" />
+                  ) : (
+                    <UserCircleIcon className="h-full w-full text-gray-300" />
+                  )}
+                </span>
+                <label
+                  htmlFor="profile-image-upload"
+                  className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <span>Change</span>
+                  <input id="profile-image-upload" name="profileImage" type="file" onChange={handleFileChange} className="sr-only" />
+                </label>
+              </div>
+            </div>
+            {/* ------------------------------- */}
+
 
             <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
               <div className="sm:col-span-3">

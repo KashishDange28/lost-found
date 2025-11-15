@@ -10,14 +10,176 @@ import {
   ClockIcon,
   EyeIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  EnvelopeIcon,
+  XMarkIcon 
 } from '@heroicons/react/24/outline';
+
+
+// --- EDIT MODAL COMPONENT ---
+const EditReportModal = ({ report, onClose, onReportUpdated }) => {
+  const [formData, setFormData] = useState({
+    itemName: report.item.name || '',
+    description: report.item.description || '',
+    location: report.location || '',
+    contactInfo: report.contactInfo || ''
+  });
+  const [itemImage, setItemImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(
+    report.item.imageUrl ? `http://localhost:5000/${report.item.imageUrl.replace(/\\/g, '/')}` : null
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setItemImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const data = new FormData();
+    data.append('item.name', formData.itemName);
+    data.append('item.description', formData.description);
+    data.append('location', formData.location);
+    if (formData.contactInfo) {
+      data.append('contactInfo', formData.contactInfo);
+    }
+    if (itemImage) {
+      data.append('itemImage', itemImage);
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(
+        `http://localhost:5000/api/reports/${report._id}`,
+        data,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data.success) {
+        onReportUpdated(response.data.report); // Send updated report back to list
+        onClose(); // Close modal
+      } else {
+        setError(response.data.message || 'Failed to update report');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full">
+        <div className="flex items-center justify-between p-6 border-b">
+          <h3 className="text-xl font-semibold text-gray-900">Edit Report</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+            <input
+              type="text"
+              name="itemName"
+              value={formData.itemName}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows="3"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+              required
+            />
+          </div>
+          {report.type === 'found' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contact Information</label>
+              <input
+                type="text"
+                name="contactInfo"
+                value={formData.contactInfo}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+              />
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Item Image</label>
+            {imagePreview && (
+              <img src={imagePreview} alt="Preview" className="w-full h-auto max-h-48 object-cover rounded-md mb-2" />
+            )}
+            <input
+              type="file"
+              name="itemImage"
+              onChange={handleFileChange}
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
+          <div className="flex justify-end pt-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+// --- END EDIT MODAL COMPONENT ---
+
 
 const MyReports = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentReportToEdit, setCurrentReportToEdit] = useState(null);
 
   useEffect(() => {
     fetchReports();
@@ -47,31 +209,66 @@ const MyReports = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'resolved':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'closed':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+  const handleDelete = async (reportId) => {
+    if (window.confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.delete(
+          `http://localhost:5000/api/reports/${reportId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (response.data.success) {
+          setReports(prevReports => prevReports.filter(report => report._id !== reportId));
+        } else {
+          alert('Failed to delete report. Please try again.');
+        }
+      } catch (err) {
+        console.error('Error deleting report:', err);
+        alert('An error occurred while deleting the report.');
+      }
     }
   };
 
-  const getTypeColor = (type) => {
-    return type === 'lost' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-green-100 text-green-800 border-green-200';
+  const openEditModal = (report) => {
+    setCurrentReportToEdit(report);
+    setIsEditModalOpen(true);
   };
 
-  const getTypeIcon = (type) => {
-    return type === 'lost' ? ExclamationTriangleIcon : CheckCircleIcon;
+  const closeEditModal = () => {
+    setCurrentReportToEdit(null);
+    setIsEditModalOpen(false);
   };
+
+  const handleReportUpdated = (updatedReport) => {
+    setReports(prevReports => 
+      prevReports.map(report => 
+        report._id === updatedReport._id ? updatedReport : report
+      )
+    );
+  };
+
+  // --- HELPER FUNCTIONS ---
+  
+  // UNUSED FUNCTION REMOVED
+  // const getStatusColor = (status) => { ... };
+
+  // UNUSED FUNCTION REMOVED
+  // const getTypeColor = (type) => { ... };
+
+  // UNUSED FUNCTION REMOVED
+  // const getTypeIcon = (type) => { ... };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case 'active':
         return ClockIcon;
+      case 'matched': 
+        return CheckCircleIcon;
       case 'resolved':
         return CheckCircleIcon;
       case 'closed':
@@ -81,27 +278,24 @@ const MyReports = () => {
     }
   };
 
-  // Helper function to get item name safely
   const getItemName = (item) => {
-    if (typeof item === 'string') {
-      return item;
-    }
-    if (item && typeof item === 'object' && item.name) {
-      return item.name;
-    }
+    if (typeof item === 'string') return item;
+    if (item && typeof item === 'object' && item.name) return item.name;
     return 'Unknown Item';
   };
 
-  // Helper function to get item description safely
   const getItemDescription = (item) => {
-    if (typeof item === 'string') {
-      return null;
-    }
-    if (item && typeof item === 'object' && item.description) {
-      return item.description;
-    }
+    if (typeof item === 'string') return null;
+    if (item && typeof item === 'object' && item.description) return item.description;
     return null;
   };
+
+  const getItemImageUrl = (item) => {
+    if (item && typeof item === 'object' && item.imageUrl) return item.imageUrl;
+    return null;
+  };
+  // --- END OF HELPER FUNCTIONS ---
+
 
   const filteredReports = reports.filter(report => {
     if (filter === 'all') return true;
@@ -146,6 +340,31 @@ const MyReports = () => {
       </div>
     );
   }
+  
+  // We need these for the inline styles
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'matched': 
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'resolved':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'closed':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getTypeClass = (type) => {
+    return type === 'lost' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-green-100 text-green-800 border-green-200';
+  };
+  
+  const getTypeIcon = (type) => {
+    return type === 'lost' ? ExclamationTriangleIcon : CheckCircleIcon;
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
@@ -163,6 +382,7 @@ const MyReports = () => {
 
         {/* Stats and Filters */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+          {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <div className="text-center">
               <div className="text-3xl font-bold text-gray-900">{reports.length}</div>
@@ -238,6 +458,7 @@ const MyReports = () => {
             {filteredReports.map((report) => {
               const itemName = getItemName(report.item);
               const itemDescription = getItemDescription(report.item);
+              const itemImageUrl = getItemImageUrl(report.item); 
               const TypeIcon = getTypeIcon(report.type);
               const StatusIcon = getStatusIcon(report.status);
               
@@ -253,10 +474,10 @@ const MyReports = () => {
                         <div>
                           <h3 className="text-lg font-semibold text-white">{itemName}</h3>
                           <div className="flex items-center space-x-3 mt-1">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getTypeColor(report.type)}`}>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getTypeClass(report.type)}`}>
                               {report.type.toUpperCase()}
                             </span>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(report.status)}`}>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusClass(report.status)}`}>
                               {report.status}
                             </span>
                           </div>
@@ -272,6 +493,17 @@ const MyReports = () => {
 
                   {/* Report Content */}
                   <div className="p-6">
+                    
+                    {itemImageUrl && (
+                      <div className="mb-6">
+                        <img
+                          src={`http://localhost:5000/${itemImageUrl.replace(/\\/g, '/')}`}
+                          alt={itemName}
+                          className="w-full h-auto max-h-72 object-cover rounded-lg shadow-lg border border-gray-200"
+                        />
+                      </div>
+                    )}
+                    
                     <div className="grid md:grid-cols-2 gap-6">
                       {/* Item Details */}
                       <div className="space-y-4">
@@ -284,11 +516,6 @@ const MyReports = () => {
                           {itemDescription && (
                             <div className="bg-gray-50 rounded-lg p-3">
                               <p className="text-sm text-gray-600">{itemDescription}</p>
-                            </div>
-                          )}
-                          {report.description && (
-                            <div className="bg-blue-50 rounded-lg p-3">
-                              <p className="text-sm text-blue-800">{report.description}</p>
                             </div>
                           )}
                         </div>
@@ -318,17 +545,51 @@ const MyReports = () => {
                       </div>
                     </div>
 
+                    {/* --- MATCHED USER DETAILS --- */}
+                    {report.status === 'matched' && report.matchedUser && (
+                      <div className="mt-6 border-t pt-6">
+                        <h4 className="text-lg font-semibold text-blue-800 mb-4">🎉 Match Found!</h4>
+                        <p className="text-gray-700 mb-4">Your item has been matched! Please contact the other user to arrange a return.</p>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <UserIcon className="h-5 w-5 text-blue-600" />
+                            <span className="font-medium text-gray-900">{report.matchedUser.name}</span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <EnvelopeIcon className="h-5 w-5 text-blue-600" />
+                            <a href={`mailto:${report.matchedUser.email}`} className="text-blue-700 hover:underline">{report.matchedUser.email}</a>
+                          </div>
+                          {report.matchedUser.contactInfo && (
+                            <div className="flex items-center space-x-3">
+                              <UserIcon className="h-5 w-5 text-blue-600" />
+                              <span className="text-gray-900">{report.matchedUser.contactInfo}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {/* ---------------------------------- */}
+
+
                     {/* Action Buttons */}
-                    <div className="mt-6 flex flex-wrap gap-3">
-                      <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center space-x-2">
+                    <div className="mt-6 flex flex-wrap gap-3 border-t pt-6">
+                      <button 
+                        onClick={() => alert('View details modal not yet implemented.')}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center space-x-2">
                         <EyeIcon className="h-4 w-4" />
                         <span>View Details</span>
                       </button>
-                      <button className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium flex items-center space-x-2">
+                      <button 
+                        onClick={() => openEditModal(report)} // <-- HOOK UP THE MODAL
+                        className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium flex items-center space-x-2"
+                        disabled={report.status === 'matched'} // Disable editing if already matched
+                      >
                         <PencilIcon className="h-4 w-4" />
                         <span>Edit</span>
                       </button>
-                      <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center space-x-2">
+                      <button 
+                        onClick={() => handleDelete(report._id)}
+                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center space-x-2">
                         <TrashIcon className="h-4 w-4" />
                         <span>Delete</span>
                       </button>
@@ -351,6 +612,16 @@ const MyReports = () => {
           </button>
         </div>
       </div>
+
+      {/* --- RENDER THE MODAL --- */}
+      {isEditModalOpen && (
+        <EditReportModal
+          report={currentReportToEdit}
+          onClose={closeEditModal}
+          onReportUpdated={handleReportUpdated}
+        />
+      )}
+      {/* ------------------------ */}
     </div>
   );
 };

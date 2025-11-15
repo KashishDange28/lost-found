@@ -92,6 +92,7 @@ const AdminLogin = () => {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="new-password" // <-- FIX TO DISABLE AUTOFILL
                   required
                   className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
                   placeholder="admin@example.com"
@@ -110,7 +111,7 @@ const AdminLogin = () => {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
+                  autoComplete="new-password" // <-- FIX TO DISABLE AUTOFILL
                   required
                   className="appearance-none relative block w-full px-3 py-3 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
                   placeholder="Enter admin password"
@@ -158,4 +159,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin; 
+export default AdminLogin;

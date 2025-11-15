@@ -39,8 +39,27 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // --- ADD THIS FUNCTION ---
+  const updateUser = (newUserData) => {
+    try {
+      // Get current user data from localStorage
+      const storedUser = localStorage.getItem('user');
+      const currentUser = storedUser ? JSON.parse(storedUser) : {};
+      
+      // Merge new data with current data
+      const updatedUser = { ...currentUser, ...newUserData };
+      
+      // Save back to localStorage and state
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    } catch (error) {
+      console.error("Failed to update user in context:", error);
+    }
+  };
+  // -------------------------
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}> {/* <-- ADD updateUser HERE */}
       {children}
     </AuthContext.Provider>
   );

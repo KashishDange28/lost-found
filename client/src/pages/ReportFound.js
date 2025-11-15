@@ -12,6 +12,7 @@ const ReportFound = () => {
     location: '',
     contactInfo: ''
   });
+  const [itemImage, setItemImage] = useState(null); // <-- ADD FILE STATE
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -41,24 +42,39 @@ const ReportFound = () => {
     }
   };
 
+  // --- ADD A NEW HANDLER FOR THE FILE INPUT ---
+  const handleFileChange = (e) => {
+    setItemImage(e.target.files[0]);
+  };
+  // ---------------------------------------------
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
+    // --- MUST USE FORMDATA FOR FILE UPLOADS ---
+    const data = new FormData();
+    data.append('type', 'found');
+    data.append('item.name', formData.item.name); // Send fields one by one
+    data.append('item.description', formData.item.description);
+    data.append('location', formData.location);
+    data.append('contactInfo', formData.contactInfo);
+    
+    if (itemImage) {
+      data.append('itemImage', itemImage); // 'itemImage' MUST match multer's 'upload.single('itemImage')'
+    }
+    // -------------------------------------------
+
     try {
       const token = localStorage.getItem('token');
       await axios.post(
         'http://localhost:5000/api/reports',
-        {
-          type: 'found',
-          item: formData.item,
-          location: formData.location,
-          contactInfo: formData.contactInfo
-        },
+        data, // <-- SEND FORMDATA, NOT JSON
         {
           headers: {
             Authorization: `Bearer ${token}`
+            // Axios sets 'Content-Type: multipart/form-data' automatically
           }
         }
       );
@@ -169,6 +185,19 @@ const ReportFound = () => {
                   required
                 />
               </div>
+              
+              {/* --- ADD THE FILE INPUT FIELD --- */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Item Image (Optional)</label>
+                <input
+                  type="file"
+                  name="itemImage"
+                  onChange={handleFileChange} // Use the new file handler
+                  className="appearance-none rounded-xl block w-full p-2.5 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                />
+              </div>
+              {/* --------------------------------- */}
+
             </div>
             <button
               className="btn-hover w-full py-3 px-4 bg-green-500 text-white rounded-xl font-bold text-lg hover:bg-green-600 transition-colors duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 flex justify-center items-center"
