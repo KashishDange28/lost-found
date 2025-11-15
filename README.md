@@ -17,9 +17,10 @@ A full-stack web application for managing lost and found items for kkwagh colleg
 | <img src="screenshots/image1.png" width="300"> | <img src="screenshots/image.png" width="300"> | <img src="screenshots/image9.png" width="300"> |
 | **Report Lost Item** | **Report Found Item** | **Admin Dashboard** |
 | <img src="screenshots/image4.png" width="300"> | <img src="screenshots/image6.png" width="300"> | <img src="screenshots/image10.png" width="300"> |
-| **My Reports (Matched)** | **My Reports (Active)** | **Matched Reports** |
+| **My Reports (Matched)** | **My Reports (Active)** | **Admins Approvals** |
 | <img src="screenshots/image5.png" width="300"> | <img src="screenshots/image7.png" width="300"> | <img src="screenshots/image8.png" width="300"> |
-
+**Profile** | **Matched reports** |
+| <img src="screenshots/image3.png" width="300"> | <img src="screenshots/image11.png" width="300"> |
 ## Tech Stack
 
 - **Frontend**: React.js
