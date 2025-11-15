@@ -1,10 +1,10 @@
 # Lost & Found App
 
-## 🚀 About This Project
+## About This Project
 
 This full-stack application helps manage lost and found items for kkwagh college, connecting users who have lost an item with those who have found one.
 
-## ✨ Features
+##  Features
 
 * **Secure User Authentication:** Users can sign up, log in and manage their accounts. Includes Google OAuth for quick access.
 * **Role-Based Access:** Separate access and dashboards for regular users and administrators.
@@ -15,7 +15,7 @@ This full-stack application helps manage lost and found items for kkwagh college
 * **Match Management:** Users can view matched items and contact the other party to arrange a return. Admins can review and approve matches.
 * **Responsive Design:** A clean and modern UI that works seamlessly on both desktop and mobile devices.
 
-## 📸 Screenshots
+##  Screenshots
 
 | | | |
 | :---: | :---: | :---: |
@@ -145,14 +145,6 @@ This full-stack application helps manage lost and found items for kkwagh college
         ```bash
         npm start
         ```
-
-## Contributing
-
-1.  Fork the repository
-2.  Create your feature branch
-3.  Commit your changes
-4.  Push to the branch
-5.  Create a new Pull Request
 
 ## License
 
