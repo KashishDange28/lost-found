@@ -14,7 +14,7 @@ A full-stack web application for managing lost and found items for kkwagh colleg
 | | | |
 | :---: | :---: | :---: |
 | **Home Page** | **Register Page** | **Admin Login** |
-| <img src="client/screenshots/image1.png" width="300"> | <img src="client/screenshots/image.png" width="300"> | <img src="client/screenshots/image9.png" width="300"> |
+| <img src="screenshots/image1.png" width="300"> | <img src="client/screenshots/image.png" width="300"> | <img src="client/screenshots/image9.png" width="300"> |
 | **Report Lost Item** | **Report Found Item** | **Admin Dashboard** |
 | <img src="client/screenshots/image4.png" width="300"> | <img src="client/screenshots/image6.png" width="300"> | <img src="client/screenshots/image10.png" width="300"> |
 | **My Reports (Matched)** | **My Reports (Active)** | **Matched Reports** |
