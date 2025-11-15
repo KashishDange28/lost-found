@@ -9,13 +9,24 @@ A full-stack web application for managing lost and found items for kkwagh colleg
 - Search functionality for lost items
 - Responsive web interface
 
+## 📸 Screenshots
+
+| | | |
+| :---: | :---: | :---: |
+| **Home Page** | **Register Page** | **Admin Login** |
+| <img src="client/screenshots/image1.png" width="300"> | <img src="client/screenshots/image.png" width="300"> | <img src="client/screenshots/image9.png" width="300"> |
+| **Report Lost Item** | **Report Found Item** | **Admin Dashboard** |
+| <img src="client/screenshots/image4.png" width="300"> | <img src="client/screenshots/image6.png" width="300"> | <img src="client/screenshots/image10.png" width="300"> |
+| **My Reports (Matched)** | **My Reports (Active)** | **Matched Reports** |
+| <img src="client/screenshots/image5.png" width="300"> | <img src="client/screenshots/image7.png" width="300"> | <img src="client/screenshots/image8.png" width="300"> |
+
 ## Tech Stack
 
 - **Frontend**: React.js
 - **Backend**: Node.js with Express
 - **Database**: MongoDB
 - **Authentication**: JWT
-- 
+
 ## Getting Started
 
 ### Prerequisites
@@ -31,37 +42,3 @@ A full-stack web application for managing lost and found items for kkwagh colleg
    ```bash
    cd server
    npm install
-   ```
-3. Install client dependencies:
-   ```bash
-   cd ../client
-   npm install
-   ```
-4. Create a `.env` file in the server directory with the following variables:
-   ```
-   PORT=5000
-   MONGODB_URI=your_mongodb_uri
-   JWT_SECRET=your_jwt_secret
-   ```
-5. Start the server:
-   ```bash
-   cd server
-   npm start
-   ```
-6. Start the client:
-   ```bash
-   cd client
-   npm start
-   ```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
