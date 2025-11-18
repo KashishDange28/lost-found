@@ -1,0 +1,30 @@
+# Render service config example - placeholders should be set in the Render dashboard
+services:
+  - type: web
+    name: lostkk-server
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        value: ""
+      - key: JWT_SECRET
+        value: ""
+      - key: GOOGLE_CLIENT_ID
+        value: ""
+      - key: GOOGLE_CLIENT_SECRET
+        value: ""
+      - key: EMAIL_USER
+        value: ""
+      - key: EMAIL_PASS
+        value: ""
+      - key: CLOUDINARY_CLOUD_NAME
+        value: ""
+      - key: CLOUDINARY_API_KEY
+        value: ""
+      - key: CLOUDINARY_API_SECRET
+        value: ""
+      - key: CORS_ORIGINS
+        value: "https://your-frontend.vercel.app"

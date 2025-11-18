@@ -15,9 +15,15 @@ const Notification = require('./models/Notification');
 
 const app = express();
 const server = http.createServer(app);
+// Compute allowed origins from environment for CORS and Socket.IO
+const rawOrigins = process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || '';
+const parsedOrigins = rawOrigins.split(',').map(s => s.trim()).filter(Boolean);
+const devLocalOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://192.168.56.1:3000'];
+const allowedOrigins = process.env.NODE_ENV === 'production' ? parsedOrigins : Array.from(new Set([...parsedOrigins, ...devLocalOrigins]));
+
 const io = socketIo(server, {
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://192.168.56.1:3000'],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
   }
 });
@@ -206,7 +212,12 @@ app.locals.sendNotification = sendNotification;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://192.168.56.1:3000'],
+  origin: function(origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -240,11 +251,23 @@ app.use('/api/users', usersRoutes);
 
 // Error handling middleware (must be after routes)
 app.use((err, req, res, next) => {
-  console.error('Global error handler:', err.stack);
+  // Defensive error handler: guard against undefined `err`
+  if (!err) {
+    console.error('Global error handler called without an error object');
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+
+  // Safely log error details
+  try {
+    console.error('Global error handler:', err.stack || err);
+  } catch (logErr) {
+    console.error('Error while logging error:', logErr, 'original error:', err);
+  }
+
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack || String(err) })
   });
 });
 

@@ -92,14 +92,19 @@ const Navbar = () => {
     
     // Check if user and profileImageUrl exist
     if (user && user.profileImageUrl) {
-      return (
-        <img
-          className={`${sizeClass} rounded-full object-cover`}
-          src={`http://localhost:5000/${user.profileImageUrl.replace(/\\/g, '/')}`}
-          alt="Profile"
-        />
-      );
-    }
+        const raw = user.profileImageUrl.replace(/\\/g, '/');
+        const src = (raw.startsWith('http://') || raw.startsWith('https://'))
+          ? raw
+          : (`${require('../config/api').default.replace(/\/+$/, '')}/${raw.replace(/^\/+/, '')}`);
+
+        return (
+          <img
+            className={`${sizeClass} rounded-full object-cover`}
+            src={src}
+            alt="Profile"
+          />
+        );
+      }
     
     // Fallback to initials or a generic icon
     return (

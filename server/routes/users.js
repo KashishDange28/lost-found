@@ -2,20 +2,11 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const multer = require('multer');
 const path = require('path');
+const { parser } = require('../config/cloudinary');
 
-// Use the same multer storage as reports
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/'); // Assumes 'uploads' folder exists in 'server'
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ storage: storage });
+// Use Cloudinary-backed multer parser
+const upload = parser; // call upload.single('profileImage') in route
 
 // --- THIS IS THE UPDATED PROFILE ROUTE ---
 // @route   PUT /api/users/profile
@@ -40,9 +31,9 @@ router.put('/profile', auth, upload.single('profileImage'), async (req, res) => 
     if (year) updateFields.year = year;
     if (enrollmentNo) updateFields.enrollmentNo = enrollmentNo;
 
-    // Check if a new profile image was uploaded
+    // Check if a new profile image was uploaded (Cloudinary)
     if (req.file) {
-      updateFields.profileImageUrl = req.file.path;
+      updateFields.profileImageUrl = req.file.path || req.file.secure_url || req.file.url;
     }
     // -------------------------
 

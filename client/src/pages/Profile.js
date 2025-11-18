@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 
 const Profile = () => {
@@ -33,7 +34,13 @@ const Profile = () => {
       });
       // Set initial image preview from user context
       if (user.profileImageUrl) {
-        setImagePreview(`http://localhost:5000/${user.profileImageUrl.replace(/\\/g, '/')}`);
+        const url = user.profileImageUrl.replace(/\\/g, '/');
+        // If it's already a full URL, use it directly. Otherwise prefix with API base URL.
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          setImagePreview(url);
+        } else {
+          setImagePreview(`${API_BASE_URL.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`);
+        }
       }
     }
   }, [user]);

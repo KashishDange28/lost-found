@@ -4,21 +4,11 @@ const Report = require('../models/Report');
 const Notification = require('../models/Notification');
 const User = require('../models/User'); // Ensure User is imported
 const auth = require('../middleware/auth');
-const multer = require('multer'); 
-const path = require('path'); 
+const path = require('path');
+const { parser } = require('../config/cloudinary');
 
-// --- MULTER CONFIGURATION ---
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/'); 
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ storage: storage });
-// -----------------------------
+// Using Cloudinary-backed multer storage (see server/config/cloudinary.js)
+const upload = parser; // parser.single(...) used in routes
 
 
 // Create a new report
@@ -27,7 +17,8 @@ router.post('/', auth, upload.single('itemImage'), async (req, res) => {
     const { type, location, contactInfo } = req.body;
     const itemName = req.body['item.name']; 
     const itemDescription = req.body['item.description'];
-    const imageUrl = req.file ? req.file.path : undefined; 
+    // multer-storage-cloudinary provides the uploaded file URL in `req.file.path`
+    const imageUrl = req.file ? (req.file.path || req.file.secure_url || req.file.url) : undefined;
 
     const report = new Report({
       type,

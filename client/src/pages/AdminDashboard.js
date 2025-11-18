@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import { 
   ChartBarIcon, 
   DocumentTextIcon, 
@@ -443,7 +444,11 @@ const AdminDashboard = () => {
                   {itemImageUrl && (
                       <div className="mb-6">
                         <img
-                          src={`http://localhost:5000/${itemImageUrl.replace(/\\/g, '/')}`}
+                          src={( () => {
+                            const url = itemImageUrl.replace(/\\/g, '/');
+                            if (url.startsWith('http://') || url.startsWith('https://')) return url;
+                            return `${API_BASE_URL.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`;
+                          })()}
                           alt={itemName}
                           className="w-full h-auto max-h-72 object-cover rounded-lg shadow-lg border border-gray-200"
                         />
