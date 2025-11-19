@@ -21,8 +21,8 @@ import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-// We hardcode this for the test, but you should move it back to your .env file
-const GOOGLE_CLIENT_ID = "981577476913-3mnajrs4i54uif4vnip6fdpbaa8ecpjg.apps.googleusercontent.com";
+// Prefer environment variable for production; fallback to the existing client id for local/dev
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "981577476913-3mnajrs4i54uif4vnip6fdpbaa8ecpjg.apps.googleusercontent.com";
 
 function App() {
   return (
