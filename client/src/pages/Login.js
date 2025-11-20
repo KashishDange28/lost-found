@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import API_BASE_URL, { endpoints } from '../config/api';
 import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
@@ -32,7 +33,7 @@ const Login = () => {
     
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/auth/login',
+        `${API_BASE_URL}${endpoints.auth.login}`,
         formData,
         {
           headers: {
@@ -64,7 +65,7 @@ const Login = () => {
         throw new Error('No credential received from Google');
       }
 
-      const response = await axios.post('http://localhost:5000/api/auth/google-login', {
+      const response = await axios.post(`${API_BASE_URL}${endpoints.auth.googleLogin}`, {
         credential: credentialResponse.credential
       }, {
         headers: {
