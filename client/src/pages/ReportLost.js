@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios'; // Import axios
+import API_BASE_URL, { endpoints } from '../config/api';
 
 const ReportLost = () => {
   const navigate = useNavigate(); // Add navigate
@@ -51,8 +52,7 @@ const ReportLost = () => {
     try {
       const token = localStorage.getItem('token');
       // Use axios to send FormData
-      const response = await axios.post(
-        'http://localhost:5000/api/reports',
+      const response = await axios.post(`${API_BASE_URL}${endpoints.reports.create}`, 
         data,
         {
           headers: {

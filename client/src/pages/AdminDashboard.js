@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import API_BASE_URL from '../config/api';
+import API_BASE_URL, { endpoints } from '../config/api';
 import { 
   ChartBarIcon, 
   DocumentTextIcon, 
@@ -103,7 +103,7 @@ const AdminDashboard = () => {
       setLoading(true);
       setError('');
       
-      const response = await axios.get('http://localhost:5000/api/admin/all-reports', {
+      const response = await axios.get(`${API_BASE_URL}${endpoints.admin.allReports}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -125,7 +125,7 @@ const AdminDashboard = () => {
   const handleDeleteReport = async (reportId) => {
     if (window.confirm('Are you sure you want to permanently delete this report? This is for all users.')) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/report/${reportId}`, {
+        await axios.delete(`${API_BASE_URL}${endpoints.admin.deleteReport(reportId)}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -163,7 +163,7 @@ const AdminDashboard = () => {
 
     setPairingLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/admin/approve-match', {
+      const response = await axios.post(`${API_BASE_URL}${endpoints.admin.approveMatch}`, {
         lostReportId: selectedLostItem._id,
         foundReportId: selectedFoundItem._id
       }, {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import API_BASE_URL, { endpoints } from '../config/api';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({ lost: 0, found: 0, matched: 0 });
@@ -11,7 +12,7 @@ const Dashboard = () => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:5000/api/reports', {
+        const response = await axios.get(`${API_BASE_URL}${endpoints.reports.list}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const reports = response.data.reports;

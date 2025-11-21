@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import API_BASE_URL from '../config/api';
+import API_BASE_URL, { endpoints } from '../config/api';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 
 const Profile = () => {
@@ -84,7 +84,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        'http://localhost:5000/api/users/profile',
+        `${API_BASE_URL}${endpoints.users.profile}`,
         data, // <-- Send FormData
         {
           headers: {

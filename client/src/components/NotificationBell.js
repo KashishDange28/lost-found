@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSocket } from '../context/SocketContext';
+import API_BASE_URL, { endpoints } from '../config/api';
 import { BellIcon } from '@heroicons/react/24/outline';
 
 const NotificationBell = () => {
@@ -12,7 +13,7 @@ const NotificationBell = () => {
     // Fetch existing notifications from server
     const fetchNotifications = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/reports/notifications', {
+        const response = await fetch(`${API_BASE_URL}${endpoints.reports.notifications}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'

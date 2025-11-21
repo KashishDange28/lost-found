@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import io from 'socket.io-client';
+import API_BASE_URL, { endpoints } from '../config/api';
 import { useAuth } from './AuthContext';
 
 const SocketContext = createContext();
@@ -20,7 +21,7 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (isAuthenticated && user) {
       // Connect to Socket.IO server
-      const newSocket = io('http://localhost:5000');
+      const newSocket = io(API_BASE_URL);
       setSocket(newSocket);
 
       // Join the user's room
@@ -57,7 +58,7 @@ export const SocketProvider = ({ children }) => {
 
   const markNotificationAsRead = async (notificationId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/reports/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_BASE_URL}${endpoints.reports.readNotification(notificationId)}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import API_BASE_URL from '../config/api';
 
 const DebugAuth = () => {
   const { user, loading } = useAuth();
@@ -89,7 +90,7 @@ const DebugAuth = () => {
               <button
                 onClick={async () => {
                   try {
-                    const response = await fetch('http://localhost:5000/api/reports', {
+                    const response = await fetch(`${API_BASE_URL}/api/reports`, {
                       headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'

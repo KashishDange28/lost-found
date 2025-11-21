@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import API_BASE_URL from '../config/api';
+import API_BASE_URL, { endpoints } from '../config/api';
 import { 
   DocumentTextIcon, 
   UserIcon, 
@@ -68,7 +68,7 @@ const EditReportModal = ({ report, onClose, onReportUpdated }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        `http://localhost:5000/api/reports/${report._id}`,
+        `${API_BASE_URL}${endpoints.reports.update(report._id)}`,
         data,
         {
           headers: {
@@ -196,7 +196,7 @@ const MyReports = () => {
       setLoading(true);
       setError('');
       
-      const response = await axios.get('http://localhost:5000/api/reports', {
+      const response = await axios.get(`${API_BASE_URL}${endpoints.reports.list}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -220,7 +220,7 @@ const MyReports = () => {
       try {
         const token = localStorage.getItem('token');
         const response = await axios.delete(
-          `http://localhost:5000/api/reports/${reportId}`,
+          `${API_BASE_URL}${endpoints.reports.delete(reportId)}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`

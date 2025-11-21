@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import { 
   MagnifyingGlassIcon, 
   UserIcon, 
@@ -22,7 +23,7 @@ const MatchedReports = () => {
       setLoading(true);
       setError('');
       
-      const response = await axios.get('http://localhost:5000/api/reports/test/direct-matching', {
+      const response = await axios.get(`${API_BASE_URL}/api/reports/test/direct-matching`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
