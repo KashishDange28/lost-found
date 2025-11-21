@@ -113,6 +113,44 @@ router.get('/', auth, async (req, res) => {
 
 
 // Get single report
+// --- THIS IS THE FIXED NOTIFICATIONS ROUTE ---
+router.get('/notifications', auth, async (req, res) => {
+  try {
+    // This new query safely populates all the nested data you need
+    const notifications = await Notification.find({ user: req.user.id })
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email') // 1. Populate the user who owns the notification
+      .populate('report', 'item status') // 2. Populate the user's report
+      .populate({
+        path: 'matchedReport', // 3. Populate the matched report
+        select: 'item status user contactInfo', // 4. Select the fields we need from it
+        populate: {
+          path: 'user', // 5. Populate the user of that matched report
+          model: 'User', // Explicitly define the model to be safe
+          select: 'name email' // 6. Select the fields we need from that user
+        }
+      })
+      .lean(); // Use .lean() for safety
+    
+    // Filter out any broken notifications (where user or report was deleted)
+    const validNotifications = notifications.filter(
+      n => n.user && n.report
+    );
+
+    res.json({
+      success: true,
+      notifications: validNotifications
+    });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch notifications. Please try again later.'
+    });
+  }
+});
+
+// Get single report
 router.get('/:id', auth, async (req, res) => {
   try {
     const report = await Report.findById(req.params.id)
